@@ -349,11 +349,11 @@ def mix(src, tl, out_path):
     raw = os.path.join(WORK, f"mix_raw.{tl['mode']}.wav")
     run(["ffmpeg", "-v", "error", "-y", "-f", "f32le", "-ac", "2", "-ar", str(SR), "-i", "-", raw],
         input=total.astype(np.float32).tobytes())
-    # Chuẩn hóa âm lượng 2 lượt: khoảng -14 LUFS, đỉnh -1 dBTP (Template mục 10.4)
-    m = subprocess.run(["ffmpeg", "-i", raw, "-af", "loudnorm=I=-14:TP=-1:LRA=11:print_format=json",
+    # Chuẩn hóa âm lượng 2 lượt: khoảng -14 LUFS, đỉnh -1 dBTP (Template mục 10.4); nhắm -1.5 vì nén AAC làm đỉnh nhích lên
+    m = subprocess.run(["ffmpeg", "-i", raw, "-af", "loudnorm=I=-14:TP=-1.5:LRA=11:print_format=json",
                         "-f", "null", "-"], capture_output=True, text=True, encoding="utf-8").stderr
     j = json.loads(m[m.rindex("{"):m.rindex("}") + 1])
-    af = (f"loudnorm=I=-14:TP=-1:LRA=11:measured_I={j['input_i']}:measured_TP={j['input_tp']}:"
+    af = (f"loudnorm=I=-14:TP=-1.5:LRA=11:measured_I={j['input_i']}:measured_TP={j['input_tp']}:"
           f"measured_LRA={j['input_lra']}:measured_thresh={j['input_thresh']}:offset={j['target_offset']}:linear=true")
     run(["ffmpeg", "-v", "error", "-y", "-i", raw, "-af", af, "-ar", str(SR), "-ac", "2",
          "-t", f"{tl['duration']:.3f}", out_path])
