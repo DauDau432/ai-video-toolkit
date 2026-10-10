@@ -344,7 +344,7 @@ def mix(src, tl, out_path):
         level = np.convolve(level, np.ones(30) / 30, "same")
         env = np.repeat(level, block)
         env = np.pad(env, (0, n - len(env)), mode="edge")[:n]
-        total += music * (env[:, None] * bgm.get("volume", 0.15))
+        total += music * (env[:, None] * bgm.get("volume", 0.3))
 
     raw = os.path.join(WORK, f"mix_raw.{tl['mode']}.wav")
     run(["ffmpeg", "-v", "error", "-y", "-f", "f32le", "-ac", "2", "-ar", str(SR), "-i", "-", raw],
@@ -765,7 +765,7 @@ def main():
     ap.add_argument("command", choices=["setup", "timeline", "still", "demo", "full"])
     ap.add_argument("time", nargs="?", type=float, help="giây cần chụp (lệnh still)")
     ap.add_argument("--full", action="store_true", help="lệnh timeline/still dùng toàn bộ cảnh thay vì demo")
-    ap.add_argument("--workers", type=int, default=max(1, min(8, (os.cpu_count() or 2) // 2)))
+    ap.add_argument("--workers", type=int, default=max(1, min(5, (os.cpu_count() or 2) // 2)))
     args = ap.parse_args()
 
     if args.command == "setup":

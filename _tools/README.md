@@ -40,7 +40,7 @@ Cả video một giọng. Script sinh giọng phải sinh lại file khi lời, 
   "lead_in": 0.3,
   "segment_gap": 0.3,
   "scene_gap": 0.6,
-  "bgm": {"file": "assets/bgm/nhac.wav", "volume": 0.15, "duck": 0.35},
+  "bgm": {"file": "assets/bgm/nhac.wav", "volume": 0.3, "duck": 0.35},
   "scenes": [
     {
       "scene_id": "scene_01",
@@ -60,7 +60,7 @@ Cả video một giọng. Script sinh giọng phải sinh lại file khi lời, 
 |---|---|
 | `width`, `height`, `fps` | Mặc định 1920, 1080, 60. Video dọc: 1080 x 1920. Không đặt thấp hơn 1080p hoặc dưới 60 fps khi người dùng chưa đồng ý. |
 | `lead_in`, `segment_gap`, `scene_gap` | Khoảng lặng (giây) trước đoạn đầu, giữa các đoạn, sau đoạn cuối mỗi cảnh. Chỉnh riêng một đoạn bằng `{"id": "s3", "gap_after": 1.0}`, riêng một cảnh bằng `"pause_after"`. |
-| `bgm` | Nhạc nền tự lặp, tự giảm xuống `duck` lần khi có lời. Không có nhạc thì `null`. |
+| `bgm` | Nhạc nền tự lặp, tự giảm xuống `duck` lần khi có lời. `volume` để 0.3 (30%, người dùng đã chọn), không tự đặt thấp hơn khi người dùng chưa yêu cầu. Không có nhạc thì `null`. |
 | `segments` | Thứ tự đoạn giọng trong cảnh. Cảnh nối tiếp nhau, không có giờ bắt đầu viết tay. |
 | `actions[].id` | Tên duy nhất, HTML dùng tên này để lấy thời gian. |
 | `actions[].type` | Chuột: `cursor_move`, `hover`, `click`, `double_click`, `right_click`, `drag`. Phím: `type`, `key`, `shortcut`. Khác: `reveal`, `zoom`, `scroll`… tùy bạn đặt. |
@@ -119,6 +119,6 @@ Báo cáo do công cụ viết; không tự viết hay sửa tay `sync-report.md
 
 ## Máy và tốc độ
 
-Render song song nhiều Chromium (mặc định 8 tiến trình, đổi bằng `--workers`). Mã hóa H.264 bằng GPU NVIDIA (`h264_nvenc`, CQ 18) nếu dùng được, không thì tự chuyển sang `libx264` CRF 16. Hai cách cho chất lượng gần như nhau (SSIM 0,9995). Đo thử trên máy này (driver 617.42): 18 giây video 60 fps dựng mất 11 giây với cả GPU lẫn CPU, vì phần chậm là chụp khung hình bằng trình duyệt chứ không phải mã hóa.
+Render song song nhiều Chromium (mặc định 5 tiến trình cho nhẹ máy, đổi bằng `--workers`). Mã hóa H.264 bằng GPU NVIDIA (`h264_nvenc`, CQ 18) nếu dùng được, không thì tự chuyển sang `libx264` CRF 16. Hai cách cho chất lượng gần như nhau (SSIM 0,9995). Đo thử trên máy này (driver 617.42): 18 giây video 60 fps dựng mất 11 giây với cả GPU lẫn CPU, vì phần chậm là chụp khung hình bằng trình duyệt chứ không phải mã hóa.
 
 File tạm ở `tmp/videokit/` (kết quả Whisper được lưu lại, giọng không đổi thì không chạy lại).
