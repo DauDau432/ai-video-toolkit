@@ -1,0 +1,10 @@
+# Chỉ đưa bộ công cụ dùng chung lên git; dự án video, model và kho lưu trữ ở lại trên máy
+/*
+!/.gitignore
+!/Template.md
+!/clean_workspace.py
+!/_tools/
+
+__pycache__/
+_tools/**/tmp/
+_tools/**/output/

@@ -1,0 +1,40 @@
+{
+  "project_name": "Vi du videokit",
+  "html": "assets/templates/video.html",
+  "width": 1920,
+  "height": 1080,
+  "fps": 60,
+  "demo_scenes": ["scene_01", "scene_02"],
+  "lead_in": 0.3,
+  "segment_gap": 0.3,
+  "scene_gap": 0.6,
+  "bgm": null,
+  "scenes": [
+    {
+      "scene_id": "scene_01",
+      "segments": ["s1", "s2"],
+      "actions": [
+        {"id": "title_in", "type": "reveal", "duration": 0.5,
+         "anchor": {"segment_id": "s1", "keyword": "nhìn vào màn hình", "offset": 0}},
+        {"id": "click_terminal", "type": "click", "target": "#terminal", "sfx": "assets/sfx/click.wav",
+         "anchor": {"segment_id": "s1", "keyword": "khởi tạo", "offset": 0}},
+        {"id": "type_whoami", "type": "type", "text": "whoami", "duration": 0.8, "sfx": "assets/sfx/key.wav",
+         "anchor": {"segment_id": "s2", "keyword": "chưa kịp cài", "offset": 0}}
+      ]
+    },
+    {
+      "scene_id": "scene_02",
+      "segments": ["s3"],
+      "actions": [
+        {"id": "type_journal", "type": "type", "text": "journalctl -u ssh", "duration": 1.4, "sfx": "assets/sfx/key.wav",
+         "anchor": {"segment_id": "s3", "keyword": "các con bot", "offset": 0}},
+        {"id": "enter_journal", "type": "key", "keys": "Enter", "sfx": "assets/sfx/key.wav",
+         "anchor": {"segment_id": "s3", "keyword": "cày nát", "offset": 0}},
+        {"id": "log_flood", "type": "reveal", "duration": 1.5,
+         "anchor": {"segment_id": "s3", "keyword": "cày nát", "offset": 0.1}},
+        {"id": "count_up", "type": "reveal", "duration": 1.8,
+         "anchor": {"segment_id": "s3", "keyword": "hàng ngàn lượt", "offset": 0}}
+      ]
+    }
+  ]
+}

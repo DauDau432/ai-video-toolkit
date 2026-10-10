@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #0d1117; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: #e6edf3; }
+  .scene { position: absolute; inset: 0; display: none; }
+  h1 { position: absolute; left: 120px; top: 90px; margin: 0; font-size: 76px; font-weight: 800; }
+  h1 small { display: block; font-size: 40px; font-weight: 500; color: #8b949e; margin-top: 12px; }
+  .win { position: absolute; left: 120px; top: 330px; width: 1680px; height: 640px; border-radius: 18px;
+         background: #161b22; border: 3px solid #30363d; box-shadow: 0 30px 80px rgba(0,0,0,.5); overflow: hidden; }
+  .win.focus { border-color: #58a6ff; }
+  .bar { height: 64px; background: #21262d; display: flex; align-items: center; padding: 0 26px; gap: 14px; font-size: 26px; color: #8b949e; }
+  .dot { width: 18px; height: 18px; border-radius: 50%; }
+  .term { padding: 30px 40px; font: 40px/1.5 Consolas, "Cascadia Mono", monospace; white-space: pre; }
+  .prompt { color: #3fb950; }
+  .bad { color: #ff7b72; }
+  .stat { position: absolute; right: 120px; top: 110px; text-align: right; font-size: 34px; color: #8b949e; }
+  .stat b { display: block; font-size: 96px; color: #ff7b72; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<section class="scene" id="scene_01">
+  <h1 id="title">VPS mới tạo 15 phút<small>chưa cài gì cả</small></h1>
+  <div class="win" id="terminal">
+    <div class="bar"><span class="dot" style="background:#ff5f56"></span><span class="dot" style="background:#ffbd2e"></span><span class="dot" style="background:#27c93f"></span>&nbsp; root@vps: ~</div>
+    <div class="term"><span class="prompt">root@vps:~#</span> <span id="cmd1"></span><span id="caret1">▌</span></div>
+  </div>
+</section>
+
+<section class="scene" id="scene_02">
+  <h1>Bot dò mật khẩu SSH</h1>
+  <div class="stat">lượt dò / phút<b id="count">0</b></div>
+  <div class="win focus">
+    <div class="bar"><span class="dot" style="background:#ff5f56"></span><span class="dot" style="background:#ffbd2e"></span><span class="dot" style="background:#27c93f"></span>&nbsp; root@vps: ~</div>
+    <div class="term" id="term2"></div>
+  </div>
+</section>
+
+<script>
+// Chỉ có renderAtTime(t): vẽ đúng trạng thái tại giây t. Không timer, không requestAnimationFrame.
+// Mọi mốc thời gian lấy từ window.TIMELINE (do _tools/videokit.py tính theo giọng thật), không viết số giây cứng.
+const LOG = [
+  "Failed password for root from 185.220.101.4",
+  "Failed password for root from 45.155.205.233",
+  "Failed password for admin from 103.145.13.92",
+  "Failed password for root from 194.26.29.120",
+  "Failed password for ubuntu from 61.177.172.140",
+  "Failed password for root from 218.92.0.112",
+];
+
+window.renderAtTime = function (t) {
+  const sc = VK.scene(t);
+  document.querySelectorAll(".scene").forEach((el) => (el.style.display = el.id === sc.scene_id ? "block" : "none"));
+
+  if (sc.scene_id === "scene_01") {
+    const k = VK.p(t, "title_in");
+    title.style.opacity = k;
+    title.style.transform = `translateY(${(1 - k) * 30}px)`;
+    terminal.classList.toggle("focus", VK.on(t, "click_terminal"));
+    cmd1.textContent = VK.typed(t, "type_whoami");
+    caret1.style.visibility = VK.caret(t) ? "visible" : "hidden";
+  }
+
+  if (sc.scene_id === "scene_02") {
+    const cmd = VK.typed(t, "type_journal");
+    let html = `<span class="prompt">root@vps:~#</span> ${cmd}`;
+    if (VK.on(t, "enter_journal")) {
+      const shown = Math.floor(VK.p(t, "log_flood") * LOG.length);
+      html += "\n" + LOG.slice(0, shown).map((l) => `<span class="bad">${l}</span>`).join("\n");
+    } else if (VK.caret(t)) html += "▌";
+    term2.innerHTML = html;
+    count.textContent = Math.round(VK.p(t, "count_up") * 1420).toLocaleString("vi-VN");
+  }
+};
+</script>
+</body>
+</html>
