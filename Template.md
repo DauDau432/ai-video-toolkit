@@ -256,7 +256,7 @@ Nguyên tắc:
 - Không cố định một tốc độ đọc cho mọi video.
 - Ưu tiên xử lý câu chữ trước khi tăng tốc giọng đọc.
 - Nhạc nền phải thấp hơn lời thoại và tự giảm khi lời thoại cần được ưu tiên.
-- Nhạc nền sinh bằng `python _tools/videokit.py music "<mô tả>" --seconds <giây> --out assets/bgm/<tên>.wav` (AI ACE-Step chạy trên máy, dùng thương mại được). Mô tả viết tiếng Anh, hợp chủ đề và phong cách video: thể loại, tâm trạng, nhạc cụ, nhịp (BPM), luôn không lời. Ví dụ video bảo mật: `dark cyber ambient electronic, pulsing synth bass, tense but calm, no vocals`; video nấu ăn: `warm acoustic guitar, light percussion, cheerful, cozy`. Độ dài bằng cả video (tối đa 470 giây; lấy từ `timeline --full`). Không tự tổng hợp nhạc bằng code. Ghi mô tả và seed vào danh sách tài nguyên mục 7 để sinh lại đúng bản đó khi cần.
+- Nhạc nền lấy từ thư viện Mixkit (miễn phí, dùng được cho YouTube, mạng xã hội, thương mại; không dùng cho TV, game, CD/DVD). Chọn mục hợp chủ đề và phong cách video rồi liệt kê: `python _tools/videokit.py music mood/dark,tag/technology` (danh sách mục trong `_tools/README.md`). Chọn bài không lời có tag và tâm trạng hợp nhất, tránh bài sôi động lấn lời thoại; rồi tải: `python _tools/videokit.py music <mã bài> --seconds <giây> --out assets/bgm/<tên>.wav`, với số giây bằng cả video (lấy từ `timeline --full`). Lệnh tự chuẩn hóa âm lượng, nối vòng lặp mượt và fade cuối. Không tự tổng hợp nhạc bằng code. Ghi tên bài, tác giả, link và giấy phép vào danh sách tài nguyên mục 7.
 - SFX phải đúng thời điểm, không lặp dày đặc và không gây mất tập trung.
 - Không yêu cầu hiệu ứng âm thanh cho mọi hành động.
 - Nếu không cần âm thanh ở một đoạn, ghi rõ chủ đích thay vì để mặc định.

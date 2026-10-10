@@ -5,7 +5,6 @@ Thư mục này không bị tool dọn dẹp chuyển đi. Dùng lại, không t
 | Thư mục | Model | Dùng cho |
 |---|---|---|
 | `faster-whisper-large-v3/` | Whisper large-v3 (bản faster-whisper, 2,9 GB) | Lấy mốc thời gian từng từ, nghe lại giọng đọc để bắt lỗi (Template mục 4.1, 6.2) |
-| `ace-step/` | ACE-Step 1.5 (giấy phép MIT, nhạc sinh ra dùng thương mại được), môi trường Python riêng và model trong `ace-step/checkpoints/` | Sinh nhạc nền không lời theo mô tả (`videokit.py music`, Template mục 6). `videokit.py setup` tự clone, cài và chạy thử ở lần đầu. |
 
 Đã cài sẵn: `faster-whisper`, `av<19` (bản 19 không chạy được với faster-whisper 1.2.1), `nvidia-cublas-cu12`, `nvidia-cudnn-cu12`. Chạy bằng GPU RTX 4060, khoảng 1 giây mỗi đoạn thoại.
 

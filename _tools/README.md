@@ -13,12 +13,22 @@ Công cụ tự đo thời lượng giọng thật, dùng Whisper tìm từ khó
 
 | Lệnh | Việc |
 |---|---|
-| `python _tools/videokit.py setup` | Kiểm tra máy, tự cài thư viện Python, Chromium, model Whisper, ACE-Step (sinh nhạc) còn thiếu rồi chạy thử. Chạy đầu mỗi phiên làm việc (Template Giai đoạn 0); chỉ làm tiếp khi in "Máy đã sẵn sàng làm video." |
+| `python _tools/videokit.py setup` | Kiểm tra máy, tự cài thư viện Python, Chromium, model Whisper còn thiếu rồi chạy thử. Chạy đầu mỗi phiên làm việc (Template Giai đoạn 0); chỉ làm tiếp khi in "Máy đã sẵn sàng làm video." |
 | `python _tools/videokit.py timeline` | Tính timeline bản demo, in ra lời Whisper nghe được và giây của từng hành động. Chạy lệnh này trước tiên để sửa từ khóa. Thêm `--full` cho toàn bộ cảnh. |
 | `python _tools/videokit.py still 12.5` | Chụp khung hình tại giây 12.5 vào `tmp/still_12.50.png` để xem nhanh bố cục, cỡ chữ. Thêm `--full` để dùng thời gian của bản đầy đủ. |
-| `python _tools/videokit.py music "dark cyber ambient, synth bass, no vocals" --seconds 180 --out assets/bgm/nhac.wav` | Sinh nhạc nền không lời bằng ACE-Step 1.5 trên máy (10 đến 470 giây), chuẩn hóa âm lượng, in seed. Thêm `--seed N` để sinh lại đúng bản cũ, `--bpm N` để ép nhịp. Lần đầu tự cài ACE-Step vào `_models/ace-step/` và tải model (khoảng 10 GB). Mô tả viết tiếng Anh, hợp chủ đề (Template mục 6). |
+| `python _tools/videokit.py music mood/dark,tag/technology` | Liệt kê nhạc nền Mixkit trong các mục đã cho (mã bài, tên, tác giả, độ dài, tag); bài nằm trong nhiều mục xếp trước. |
+| `python _tools/videokit.py music 134 --seconds 180 --out assets/bgm/nhac.wav` | Tải bài 134, giữ bản mp3 gốc cạnh file wav, chuẩn hóa -16 LUFS, bỏ đoạn nhỏ dần cuối bài, nối vòng lặp mượt cho đủ số giây, fade-out 3 giây. |
 | `python _tools/videokit.py demo` | Dựng `output/preview/demo.mp4` từ các cảnh trong `demo_scenes`, kèm `output/preview/sync-report.md` và ảnh trước/sau ở `output/preview/sync-frames/`. |
 | `python _tools/videokit.py full` | Dựng `output/final/<tên>-16x9.mp4` (hoặc `9x16`). Từ chối chạy nếu chưa có `docs/approval.md` (Template mục 10.1). Báo cáo ở `output/preview/sync-report-full.md`. |
+
+Mục nhạc Mixkit hay dùng (ghép nhiều mục bằng dấu phẩy):
+
+- Tâm trạng: `mood/calm`, `mood/dark`, `mood/futuristic`, `mood/mysterious`, `mood/tension`, `mood/suspenseful`, `mood/hypnotic`, `mood/positive`, `mood/uplifting`, `mood/happy`, `mood/cheerful`, `mood/relaxed`, `mood/dreamy`, `mood/epic`, `mood/dramatic`, `mood/sad`, `mood/hopeful`, `mood/motivating`.
+- Thể loại: `ambient`, `chillout`, `lo-fi-beats`, `electronic`, `electronica`, `techno`, `synthwave`, `cinematic`, `corporate-music`, `rhythmic-underscore`, `minimalism`, `jazz`, `classical`, `pop`, `rock`, `world`.
+- Chủ đề: `tag/technology`, `tag/science`, `tag/sci-fi`, `tag/corporate`, `tag/documentary`, `tag/background`, `tag/news`, `tag/cooking`, `tag/travel`, `tag/nature`, `tag/lifestyle`, `tag/motivational`, `tag/sports`, `tag/workout`, `children`.
+- Nhạc cụ: `instrument/piano`, `instrument/synth`, `instrument/acoustic-guitar`, `instrument/strings`.
+
+Đủ danh sách: xem đường dẫn trên trang https://mixkit.co/free-stock-music/ (phần sau `/free-stock-music/`).
 
 Mã thoát: 0 = đạt, 1 = lỗi đầu vào (thiếu file, không tìm thấy từ khóa…), 2 = dựng xong nhưng kiểm tra KHÔNG ĐẠT. Gặp 1 hoặc 2 phải sửa rồi chạy lại, không được báo người dùng là xong.
 

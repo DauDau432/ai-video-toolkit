@@ -6,7 +6,8 @@ Chạy ở thư mục gốc dự án:
   python _tools/videokit.py still 12.5    # chụp 1 khung hình tại giây 12.5 (bản demo) để xem nhanh
   python _tools/videokit.py demo          # dựng bản demo (các cảnh trong demo_scenes) + báo cáo đồng bộ
   python _tools/videokit.py full          # dựng bản đầy đủ (cần docs/approval.md) + báo cáo đồng bộ
-  python _tools/videokit.py music "dark ambient electronic, tense, 90 bpm" --seconds 300 --out assets/bgm/nhac.wav
+  python _tools/videokit.py music mood/dark,tag/technology       # liệt kê nhạc nền Mixkit theo mục
+  python _tools/videokit.py music 134 --seconds 300 --out assets/bgm/nhac.wav   # tải, lặp đủ độ dài
 Thêm --workers N để đặt số tiến trình render. Định dạng timeline.json và HTML: xem _tools/README.md.
 """
 import argparse
@@ -33,8 +34,6 @@ ROOT = os.getcwd()
 TIMELINE = os.path.join(ROOT, "docs", "timeline.json")
 WORK = os.path.join(ROOT, "tmp", "videokit")
 MODEL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "_models", "faster-whisper-large-v3")
-ACE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "_models", "ace-step")
-ACE_REPO = "https://github.com/ace-step/ACE-Step-1.5.git"
 SR = 48000
 
 TOL_PASS = 0.15   # Template mục 4.1: sự kiện chính lệch không quá ±150 ms
@@ -673,65 +672,87 @@ def build(mode, workers):
     sys.exit(0 if good else 2)
 
 
-# ---------------------------------------------------------------- Nhạc nền (ACE-Step 1.5, giấy phép MIT)
+# ---------------------------------------------------------------- Nhạc nền (thư viện Mixkit: miễn phí, dùng thương mại được)
 
-def uv():
-    """ACE-Step cần Python 3.11-3.12 nên chạy trong môi trường riêng do uv quản lý; chưa có uv thì cài qua pip."""
-    if shutil.which("uv"):
-        return ["uv"]
-    import importlib.util
-    if importlib.util.find_spec("uv") is None:
-        subprocess.run([sys.executable, "-m", "pip", "install", "uv"])
-    return [sys.executable, "-m", "uv"]
+MIXKIT = "https://mixkit.co/free-stock-music/"
 
 
-def install_music():
-    """Tải mã nguồn ACE-Step vào _models/ace-step và cài môi trường. Trả về lỗi, hoặc None nếu xong."""
-    if not os.path.exists(os.path.join(ACE, "pyproject.toml")):
-        if not shutil.which("git"):
-            return "cần git để tải ACE-Step. Cài: winget install Git.Git rồi mở lại terminal/IDE"
-        if subprocess.run(["git", "clone", "--depth", "1", ACE_REPO, ACE]).returncode:
-            return "không tải được mã nguồn ACE-Step"
-    if subprocess.run(uv() + ["sync"], cwd=ACE).returncode:
-        return "cài môi trường ACE-Step (uv sync) lỗi"
-    return None
+def fetch(url):
+    import urllib.request
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"}), timeout=60) as r:
+        return r.read()
 
 
-def music(caption, seconds, out, bpm=None, seed=None):
-    """Sinh nhạc nền không lời theo mô tả, chuẩn hóa về -16 LUFS để mức `volume` trong timeline luôn
-    nghe như nhau dù model sinh to hay nhỏ."""
-    if not 10 <= seconds <= 470:
-        fail("--seconds phải từ 10 đến 470 (video dài hơn thì nhạc tự lặp)")
-    if err := install_music():
-        fail(err)
+def music_list(categories):
+    """In các bài trong những mục Mixkit đã cho (vd mood/dark,tag/technology); bài nằm trong nhiều mục xếp trước."""
+    import html as htmllib
+    found = {}
+    for cat in categories.split(","):
+        cat = cat.strip().strip("/")
+        try:
+            page = fetch(MIXKIT + cat + "/").decode("utf-8", "replace")
+        except Exception as e:
+            fail(f"Không mở được mục '{cat}' ({e}). Danh sách mục: xem _tools/README.md.")
+        cards = page.split('data-audio-player-item-id-value="')[1:]
+        if not cards:
+            fail(f"Mục '{cat}' không có bài nào. Danh sách mục: xem _tools/README.md.")
+        for c in cards:
+            tid = c[:c.index('"')]
+            if tid in found:
+                found[tid]["hits"] += 1
+                continue
+            get = lambda pat: htmllib.unescape(m.group(1).strip()) if (m := re.search(pat, c, re.S)) else "?"
+            found[tid] = {"hits": 1, "title": get(r'item-grid-card__title">(.*?)</h2>'),
+                          "author": get(r'music-preview__author">\s*by (.*?)</p>'),
+                          "time": get(r'data-test-id="duration">\s*([\d:]+)'),
+                          "tags": ", ".join(htmllib.unescape(t) for t in re.findall(r'meta-links__link"[^>]*>([^<]+)</a>', c))}
+    for tid, t in sorted(found.items(), key=lambda kv: -kv[1]["hits"]):
+        print(f"{tid:>6}  {t['title']} - {t['author']}  {t['time']}  [{t['tags']}]")
+    print("\nTải bài đã chọn: python _tools/videokit.py music <mã bài> --seconds <giây> --out assets/bgm/<tên>.wav")
+
+
+def music_get(tid, seconds, out):
+    """Tải bài Mixkit, chuẩn hóa về -16 LUFS (để `volume` trong timeline luôn nghe như nhau), bỏ đoạn nhỏ dần
+    cuối bài, nối vòng lặp mượt cho đủ `seconds` rồi fade-out 3 giây. Bản mp3 gốc giữ cạnh file kết quả."""
     out = os.path.abspath(out)
-    raw = os.path.join(WORK, "music_raw.wav")
-    os.makedirs(WORK, exist_ok=True)
-    cmd = uv() + ["run", "--project", ACE, "python", os.path.join(os.path.dirname(os.path.abspath(__file__)), "music_gen.py"),
-                  "--caption", caption, "--seconds", str(seconds + 10), "--out", raw]
-    cmd += ["--bpm", str(bpm)] if bpm else []
-    cmd += ["--seed", str(seed)] if seed is not None else []
-    print(f"Sinh nhạc {seconds:.0f} giây: {caption}")
-    r = subprocess.run(cmd, cwd=ACE, capture_output=True, text=True, encoding="utf-8", errors="replace")
-    if r.returncode or not os.path.exists(raw):
-        fail("Sinh nhạc lỗi:\n" + "\n".join((r.stdout + r.stderr).strip().splitlines()[-15:]))
-    used_seed = re.findall(r"seed=(-?\d+)", r.stdout)
     os.makedirs(os.path.dirname(out), exist_ok=True)
-    # Model hay kết bài bằng vài giây lặng: sinh dư 10 giây, cắt đúng độ dài rồi fade-out 3 giây
-    run(["ffmpeg", "-v", "error", "-y", "-i", raw, "-af",
-         f"atrim=0:{seconds},afade=t=out:st={seconds - 3}:d=3,loudnorm=I=-16:TP=-1.5:LRA=11",
-         "-ar", str(SR), "-ac", "2", out])
-    dur = probe_duration(out)
-    audio = decode(out)
-    level = float(np.sqrt(np.mean(audio ** 2)) or 1e-9)
-    # Khoảng lặng dài hơn 2 giây (trừ đoạn fade cuối) nghe như nhạc bị tắt giữa video
-    win = audio[: (len(audio) - 3 * SR) // (SR // 2) * (SR // 2)].reshape(-1, SR // 2, 2)
-    quiet = 20 * np.log10(np.sqrt(np.mean(win ** 2, axis=(1, 2))) + 1e-9) < -45
-    gap = max((len(g) for g in "".join("1" if q else "0" for q in quiet).split("0")), default=0) / 2
-    if dur < seconds - 1 or 20 * np.log10(level) < -40 or gap > 2:
-        fail(f"Nhạc sinh ra không dùng được ({dur:.1f} giây, mức {20 * np.log10(level):.0f} dB, "
-             f"khoảng lặng dài nhất {gap:.1f} giây). Chạy lại, đổi --seed.")
-    print(f"Đã lưu: {os.path.relpath(out, ROOT)} ({dur:.1f} giây, seed {used_seed[-1] if used_seed else '?'})")
+    os.makedirs(WORK, exist_ok=True)
+    original = os.path.splitext(out)[0] + ".mp3"
+    try:
+        data = fetch(f"https://assets.mixkit.co/music/{tid}/{tid}.mp3")
+    except Exception as e:
+        fail(f"Không tải được bài {tid} ({e}). Kiểm tra mã bài bằng lệnh liệt kê.")
+    open(original, "wb").write(data)
+    normed = os.path.join(WORK, "music_norm.wav")
+    run(["ffmpeg", "-v", "error", "-y", "-i", original, "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-ar", str(SR), "-ac", "2", normed])
+    a = decode(normed)
+
+    # Phần "chính" của bài: các đoạn 0,5 giây không nhỏ hơn mức thường của bài quá 6 dB
+    win = SR // 2
+    rms = np.sqrt(np.mean(a[: len(a) // win * win].reshape(-1, win, 2) ** 2, axis=(1, 2)))
+    db = 20 * np.log10(rms + 1e-9)
+    loud = np.nonzero(db > np.median(db) - 6)[0]
+    start, end = loud[0] * win, (loud[-1] + 1) * win
+    xf = 3 * SR
+    if end - start < 4 * xf:
+        fail(f"Bài {tid} quá ngắn để làm nhạc nền, chọn bài khác.")
+    # Lần đầu phát từ đầu bài (giữ đoạn vào bài); các lần lặp sau bắt đầu từ phần chính, chồng mờ 3 giây
+    track, loops = a[:end], 0
+    up = np.sqrt(np.linspace(0, 1, xf, dtype=np.float32))[:, None]
+    down = np.sqrt(np.linspace(1, 0, xf, dtype=np.float32))[:, None]
+    body = a[start:end]
+    while len(track) < seconds * SR:
+        track = np.concatenate([track[:-xf], track[-xf:] * down + body[:xf] * up, body[xf:]])
+        loops += 1
+    track = track[: int(seconds * SR)]
+    fade = min(xf, len(track))
+    track[-fade:] *= np.linspace(1, 0, fade, dtype=np.float32)[:, None]
+    run(["ffmpeg", "-v", "error", "-y", "-f", "f32le", "-ac", "2", "-ar", str(SR), "-i", "-", out],
+        input=track.astype(np.float32).tobytes())
+    print(f"Đã lưu: {os.path.relpath(out, ROOT)} ({len(track) / SR:.1f} giây, bài gốc {len(a) / SR:.0f} giây, "
+          f"lặp thêm {loops} lần). Bản gốc: {os.path.relpath(original, ROOT)}")
+    print(f"Ghi vào danh sách tài nguyên: tên bài, tác giả, https://assets.mixkit.co/music/{tid}/{tid}.mp3, "
+          "giấy phép Mixkit Stock Music Free License.")
 
 
 # ---------------------------------------------------------------- Chuẩn bị máy
@@ -803,8 +824,7 @@ def setup():
         row(not err, "Chromium (render)", "chạy được" if not err else err)
 
     free = shutil.disk_usage(ROOT).free / 2 ** 30
-    need = 5 if os.path.exists(os.path.join(ACE, ".videokit-ok")) else 25  # lần đầu còn phải cài ACE-Step khoảng 17 GB
-    row(free >= need, "Ổ đĩa trống", f"{free:.0f} GB" + ("" if free >= need else f" (nên còn ít nhất {need} GB)"))
+    row(free >= 5, "Ổ đĩa trống", f"{free:.0f} GB" + ("" if free >= 5 else " (nên còn ít nhất 5 GB)"))
 
     if not {"numpy", "faster-whisper", "huggingface_hub"} & set(missing):
         import numpy as np
@@ -813,19 +833,6 @@ def setup():
             row(True, "Whisper large-v3", f"chạy được trên {_whisper_device}")
         except Exception as e:
             row(False, "Whisper large-v3", str(e).strip().splitlines()[0] if str(e).strip() else type(e).__name__)
-
-    # Nhạc nền: lần đầu cài ACE-Step và sinh thử 10 giây (tải model khoảng 10 GB), xong thì đánh dấu để lần sau bỏ qua
-    ok_mark = os.path.join(ACE, ".videokit-ok")
-    if not ff and np is not None and not os.path.exists(ok_mark):
-        print("  Cài ACE-Step 1.5 để sinh nhạc nền (lần đầu tải khoảng 10 GB, chỉ một lần)...")
-        test = os.path.join(WORK, "music_test.wav")
-        try:
-            music("calm ambient piano, soft pads", 10, test)
-            open(ok_mark, "w").write("ok")
-        except SystemExit:
-            pass
-    row(os.path.exists(ok_mark), "Sinh nhạc nền (ACE-Step)", "chạy được" if os.path.exists(ok_mark) else
-        "chưa chạy được, xem lỗi ở trên")
 
     bad = [name for ok, name, _ in rows if not ok]
     if bad:
@@ -841,11 +848,9 @@ def norm_name(s):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("command", choices=["setup", "timeline", "still", "demo", "full", "music"])
-    ap.add_argument("time", nargs="?", help="giây cần chụp (lệnh still) hoặc mô tả nhạc tiếng Anh (lệnh music)")
+    ap.add_argument("time", nargs="?", help="giây cần chụp (lệnh still); mục nhạc hoặc mã bài (lệnh music)")
     ap.add_argument("--seconds", type=float, help="lệnh music: độ dài nhạc, bằng tổng thời lượng bản đầy đủ")
     ap.add_argument("--out", help="lệnh music: file wav, ví dụ assets/bgm/nhac.wav")
-    ap.add_argument("--bpm", type=int, help="lệnh music: nhịp (không bắt buộc)")
-    ap.add_argument("--seed", type=int, help="lệnh music: seed để sinh lại đúng bài cũ")
     ap.add_argument("--full", action="store_true", help="lệnh timeline/still dùng toàn bộ cảnh thay vì demo")
     ap.add_argument("--workers", type=int, default=max(1, min(5, (os.cpu_count() or 2) // 2)))
     args = ap.parse_args()
@@ -855,9 +860,13 @@ def main():
     if np is None or not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
         fail("Máy chưa cài đủ công cụ. Chạy: python _tools/videokit.py setup")
     if args.command == "music":
-        if not args.time or not args.seconds or not args.out:
-            fail('Cần mô tả, --seconds và --out, ví dụ: python _tools/videokit.py music "lofi chill" --seconds 300 --out assets/bgm/nhac.wav')
-        return music(args.time, args.seconds, args.out, args.bpm, args.seed)
+        if not args.time:
+            fail("Cần mục nhạc hoặc mã bài, ví dụ: python _tools/videokit.py music mood/dark,tag/technology")
+        if not args.time.isdigit():
+            return music_list(args.time)
+        if not args.seconds or not args.out:
+            fail("Cần --seconds và --out, ví dụ: python _tools/videokit.py music 134 --seconds 300 --out assets/bgm/nhac.wav")
+        return music_get(args.time, args.seconds, args.out)
     if args.command in ("demo", "full"):
         build(args.command, args.workers)
     src = load_source()
