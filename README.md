@@ -23,7 +23,7 @@ Không dùng được với AI chat trên web (ChatGPT, Gemini, Claude.ai…): c
 
 ## Cài đặt (một lần)
 
-Cần Windows 10/11, Python 3.11 trở lên, khoảng 4 GB trống. Card NVIDIA giúp chạy nhanh hơn nhưng không bắt buộc.
+Cần Windows 10/11, Python 3.11 trở lên, khoảng 5 GB trống. Card NVIDIA giúp chạy nhanh hơn nhưng không bắt buộc.
 
 1. Tải repo:
 
@@ -31,39 +31,23 @@ Cần Windows 10/11, Python 3.11 trở lên, khoảng 4 GB trống. Card NVIDIA 
    git clone https://github.com/DauDau432/ai-video-toolkit.git
    ```
 
-2. Cài ffmpeg (bản full) và thêm vào PATH:
+2. Cài ffmpeg (bản full) và thêm vào PATH, rồi mở lại IDE:
 
    ```bash
    winget install Gyan.FFmpeg
    ```
 
-3. Cài thư viện Python và trình duyệt dùng để render:
+3. Mở thư mục repo trong IDE và nhắn agent:
 
-   ```bash
-   pip install numpy pillow playwright faster-whisper "av<19" edge-tts huggingface_hub
+   ```
+   Chạy python _tools/videokit.py setup và xử lý đến khi máy sẵn sàng.
    ```
 
-   ```bash
-   python -m playwright install chromium
-   ```
+   Lệnh `setup` tự cài các thư viện Python (thêm thư viện CUDA nếu có card NVIDIA), Chromium để render, tải model Whisper large-v3 (2,9 GB, một lần) vào `_models/`, rồi chạy thử từng thứ. Thấy dòng "Máy đã sẵn sàng làm video." là xong. Tự chạy cũng được, kết quả như nhau.
 
-   Có card NVIDIA thì cài thêm để Whisper chạy bằng GPU:
+   Agent cũng phải chạy lại lệnh này đầu mỗi phiên làm video (Template Giai đoạn 0), nên thiếu gì sẽ lộ ra từ đầu chứ không phải giữa lúc dựng.
 
-   ```bash
-   pip install nvidia-cublas-cu12 nvidia-cudnn-cu12
-   ```
-
-4. Chạy thử dự án mẫu (vào `_tools/example` rồi chạy):
-
-   ```bash
-   python ../videokit.py demo
-   ```
-
-   Lần chạy đầu tự tải model Whisper large-v3 (2,9 GB) vào `_models/`, các lần sau dùng lại. Ra `output/preview/demo.mp4` và báo cáo `ĐẠT` là máy đã sẵn sàng.
-
-Font chữ, nhạc nền, hiệu ứng âm thanh của từng video do agent tải hoặc tạo vào `assets/` của video đó (Template mục 7). `videokit.py` chặn mọi thứ tải từ mạng lúc dựng, nên agent buộc phải lưu font về máy trước.
-
-Có thể nhờ chính agent làm các bước cài đặt này: mở thư mục repo trong IDE và bảo agent "Cài đặt theo README.md".
+Font chữ, nhạc nền, hiệu ứng âm thanh của từng video do agent tải hoặc tạo vào `assets/` của video đó (Template mục 7). Trước khi dựng, `videokit.py` dừng nếu thiếu file nào và chặn mọi thứ tải từ mạng, nên agent buộc phải chuẩn bị đủ trên máy trước.
 
 ## Làm một video
 
@@ -102,6 +86,7 @@ Chạy `python clean_workspace.py` (hoặc file `clean_workspace.exe` nếu bạ
 
 `videokit.py` tự bắt phần lớn lỗi kỹ thuật và trả mã khác 0 khi không đạt:
 
+- Máy thiếu công cụ hoặc dự án thiếu file (giọng, nhạc, hiệu ứng, HTML).
 - Hình lệch lời quá ±150 ms.
 - Thao tác không hiện ra trên màn hình.
 - Lẫn giọng khác (ví dụ giọng nữ lẫn trong giọng nam).

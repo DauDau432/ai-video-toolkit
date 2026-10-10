@@ -13,6 +13,7 @@ Công cụ tự đo thời lượng giọng thật, dùng Whisper tìm từ khó
 
 | Lệnh | Việc |
 |---|---|
+| `python _tools/videokit.py setup` | Kiểm tra máy, tự cài thư viện Python, Chromium, model Whisper còn thiếu rồi chạy thử. Chạy đầu mỗi phiên làm việc (Template Giai đoạn 0); chỉ làm tiếp khi in "Máy đã sẵn sàng làm video." |
 | `python _tools/videokit.py timeline` | Tính timeline bản demo, in ra lời Whisper nghe được và giây của từng hành động. Chạy lệnh này trước tiên để sửa từ khóa. Thêm `--full` cho toàn bộ cảnh. |
 | `python _tools/videokit.py still 12.5` | Chụp khung hình tại giây 12.5 vào `tmp/still_12.50.png` để xem nhanh bố cục, cỡ chữ. Thêm `--full` để dùng thời gian của bản đầy đủ. |
 | `python _tools/videokit.py demo` | Dựng `output/preview/demo.mp4` từ các cảnh trong `demo_scenes`, kèm `output/preview/sync-report.md` và ảnh trước/sau ở `output/preview/sync-frames/`. |
@@ -106,6 +107,7 @@ Các hàm `VK`: `p(t, id, dur?)` tiến độ 0..1, `on(t, id)`, `typed(t, id, t
 
 Sau khi dựng, công cụ đo trên chính file video:
 
+- Trước khi dựng: mọi file `timeline.json` nhắc tới (HTML, giọng, nhạc nền, hiệu ứng) phải có sẵn; thiếu file nào thì dừng với mã 1 và liệt kê.
 - Trước khi dựng: trang phải chạy không cần mạng. Công cụ vẽ thử từng cảnh và chặn mọi yêu cầu ra mạng; có yêu cầu nào (Google Fonts, ảnh, CDN…) thì dừng với mã 1 và in ra đường dẫn.
 - Thông số: độ phân giải, fps, codec, âm thanh 48 kHz, thời lượng hình bằng tiếng, âm lượng -14 LUFS / đỉnh -1 dBTP.
 - Whisper nghe lại thành phẩm, tìm từng từ khóa, so với thời điểm hành động: lệch quá ±150 ms là cảnh báo, quá ±300 ms là không đạt.

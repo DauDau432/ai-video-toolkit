@@ -1,6 +1,7 @@
 """Bộ công cụ dựng video: giọng thật -> timeline -> trộn âm -> render từng khung -> kiểm tra đồng bộ.
 
 Chạy ở thư mục gốc dự án:
+  python _tools/videokit.py setup         # kiểm tra máy, tự cài thứ còn thiếu (chạy trước khi làm video)
   python _tools/videokit.py timeline      # tính timeline theo giọng thật, in bảng để kiểm tra từ khóa
   python _tools/videokit.py still 12.5    # chụp 1 khung hình tại giây 12.5 (bản demo) để xem nhanh
   python _tools/videokit.py demo          # dựng bản demo (các cảnh trong demo_scenes) + báo cáo đồng bộ
@@ -22,7 +23,10 @@ import time
 import unicodedata
 from concurrent.futures import ProcessPoolExecutor
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError:  # lệnh setup sẽ cài
+    np = None
 
 ROOT = os.getcwd()
 TIMELINE = os.path.join(ROOT, "docs", "timeline.json")
@@ -59,10 +63,11 @@ def file_hash(path):
 # ---------------------------------------------------------------- Whisper
 
 _whisper = None
+_whisper_device = None
 
 
 def whisper():
-    global _whisper
+    global _whisper, _whisper_device
     if _whisper is None:
         try:
             import nvidia
@@ -77,8 +82,12 @@ def whisper():
             snapshot_download("Systran/faster-whisper-large-v3", local_dir=MODEL)
         try:
             _whisper = WhisperModel(MODEL, device="cuda", compute_type="float16")
+            # Thiếu thư viện CUDA thường chỉ lỗi lúc nhận dạng, nên chạy thử ngay để chuyển sang CPU kịp
+            list(_whisper.transcribe(np.zeros(16000, np.float32), language="vi")[0])
+            _whisper_device = "GPU (CUDA)"
         except Exception:
             _whisper = WhisperModel(MODEL, device="cpu", compute_type="int8")
+            _whisper_device = "CPU"
     return _whisper
 
 
@@ -129,6 +138,21 @@ def load_source():
     if not os.path.exists(TIMELINE):
         fail("Không thấy docs/timeline.json")
     return json.load(open(TIMELINE, encoding="utf-8"))
+
+
+def check_inputs(src):
+    """Mọi file timeline.json nhắc tới phải có sẵn trước khi tính toán hay dựng."""
+    need = [("html", src.get("html"))]
+    if (src.get("bgm") or {}).get("file"):
+        need.append(("bgm", src["bgm"]["file"]))
+    for sc in src.get("scenes", []):
+        need += [(f"{sc.get('scene_id')}: {i if isinstance(i, str) else i.get('id')}",
+                  f"assets/voice/{i if isinstance(i, str) else i.get('id')}.wav") for i in sc.get("segments", [])]
+        need += [(f"{a.get('id', sc.get('scene_id'))}: sfx", a["sfx"]) for a in sc.get("actions", []) if a.get("sfx")]
+    missing = sorted({f"{f or '(trống)'}  ({what})" for what, f in need
+                      if not f or not os.path.isfile(os.path.join(ROOT, f))})
+    if missing:
+        fail("Thiếu file đầu vào (tạo hoặc tải về đúng đường dẫn rồi chạy lại):\n  " + "\n  ".join(missing))
 
 
 def resolve(src, mode):
@@ -615,6 +639,7 @@ def build(mode, workers):
     if mode == "full" and not os.path.exists(os.path.join(ROOT, "docs", "approval.md")):
         fail("Bản demo chưa được duyệt (chưa có docs/approval.md). Không dựng bản đầy đủ.")
     os.makedirs(WORK, exist_ok=True)
+    check_inputs(src)
     check_voices(src)
     tl = resolve(src, mode)
     print_timeline(tl)
@@ -645,6 +670,91 @@ def build(mode, workers):
     sys.exit(0 if good else 2)
 
 
+# ---------------------------------------------------------------- Chuẩn bị máy
+
+PACKAGES = [("numpy", "numpy"), ("PIL", "pillow"), ("playwright", "playwright"), ("faster_whisper", "faster-whisper"),
+            ("av", "av<19"), ("edge_tts", "edge-tts"), ("huggingface_hub", "huggingface_hub")]
+GPU_PACKAGES = [("nvidia.cublas", "nvidia-cublas-cu12"), ("nvidia.cudnn", "nvidia-cudnn-cu12")]
+
+
+def setup():
+    """Kiểm tra máy và tự cài những gì còn thiếu, để lúc làm video không gặp lỗi thiếu công cụ.
+    Chạy lại bao nhiêu lần cũng được; thứ đã có thì bỏ qua."""
+    import importlib
+    import importlib.util
+    rows = []
+
+    def row(ok, name, note):
+        rows.append((ok, name, note))
+        print(f"  [{'OK' if ok else 'THIẾU'}] {name}: {note}")
+
+    print("Kiểm tra máy...")
+    row(sys.version_info >= (3, 11), "Python", sys.version.split()[0] + ("" if sys.version_info >= (3, 11) else
+                                                                        " (cần 3.11 trở lên)"))
+
+    gpu = shutil.which("nvidia-smi") is not None
+    pkgs = PACKAGES + (GPU_PACKAGES if gpu else [])
+
+    def missing_pkgs():
+        importlib.invalidate_caches()
+        out = []
+        for mod, pip in pkgs:
+            try:
+                if importlib.util.find_spec(mod) is None:
+                    out.append(pip)
+            except ImportError:
+                out.append(pip)
+        return out
+
+    if missing := missing_pkgs():
+        print(f"  Cài thư viện Python còn thiếu: {' '.join(missing)}")
+        subprocess.run([sys.executable, "-m", "pip", "install", *missing])
+        missing = missing_pkgs()
+    row(not missing, "Thư viện Python", "đủ" if not missing else "không cài được: " + ", ".join(missing))
+
+    ff = [t for t in ("ffmpeg", "ffprobe") if not shutil.which(t)]
+    row(not ff, "ffmpeg", "có" if not ff else
+        "không thấy " + ", ".join(ff) + ". Cài: winget install Gyan.FFmpeg rồi mở lại terminal/IDE")
+    if not ff:
+        enc = encoder_args()[0]
+        row(True, "Mã hóa video", enc + ("" if not gpu or enc == "h264_nvenc"
+                                         else " (có card NVIDIA nhưng NVENC không chạy, dùng CPU)"))
+
+    if "playwright" not in missing:
+        from playwright.sync_api import sync_playwright
+
+        def launch():
+            try:
+                with sync_playwright() as p:
+                    p.chromium.launch().close()
+                return None
+            except Exception as e:
+                return str(e).strip().splitlines()[0]
+
+        if err := launch():
+            print("  Cài Chromium cho Playwright...")
+            subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"])
+            err = launch()
+        row(not err, "Chromium (render)", "chạy được" if not err else err)
+
+    free = shutil.disk_usage(ROOT).free / 2 ** 30
+    row(free >= 5, "Ổ đĩa trống", f"{free:.0f} GB" + ("" if free >= 5 else " (nên còn ít nhất 5 GB)"))
+
+    if not {"numpy", "faster-whisper", "huggingface_hub"} & set(missing):
+        global np
+        import numpy as np
+        try:
+            whisper()
+            row(True, "Whisper large-v3", f"chạy được trên {_whisper_device}")
+        except Exception as e:
+            row(False, "Whisper large-v3", str(e).strip().splitlines()[0] if str(e).strip() else type(e).__name__)
+
+    bad = [name for ok, name, _ in rows if not ok]
+    if bad:
+        fail("Máy CHƯA sẵn sàng, còn thiếu: " + ", ".join(bad) + ". Xử lý theo ghi chú ở trên rồi chạy lại setup.")
+    print("\nMáy đã sẵn sàng làm video.")
+
+
 def norm_name(s):
     s = unicodedata.normalize("NFD", s.lower().replace("đ", "d"))
     return "".join(c for c in s if unicodedata.category(c) != "Mn")
@@ -652,15 +762,20 @@ def norm_name(s):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=["timeline", "still", "demo", "full"])
+    ap.add_argument("command", choices=["setup", "timeline", "still", "demo", "full"])
     ap.add_argument("time", nargs="?", type=float, help="giây cần chụp (lệnh still)")
     ap.add_argument("--full", action="store_true", help="lệnh timeline/still dùng toàn bộ cảnh thay vì demo")
     ap.add_argument("--workers", type=int, default=max(1, min(8, (os.cpu_count() or 2) // 2)))
     args = ap.parse_args()
 
+    if args.command == "setup":
+        return setup()
+    if np is None or not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
+        fail("Máy chưa cài đủ công cụ. Chạy: python _tools/videokit.py setup")
     if args.command in ("demo", "full"):
         build(args.command, args.workers)
     src = load_source()
+    check_inputs(src)
     tl = resolve(src, "full" if args.full else "demo")
     if args.command == "timeline":
         print_timeline(tl)

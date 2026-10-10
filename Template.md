@@ -82,6 +82,11 @@ Mục này cấm thao tác **thừa và chậm**, không cấm thao tác. Với 
 
 Thực hiện theo thứ tự sau:
 
+**Giai đoạn 0 — Chuẩn bị máy (đầu mỗi phiên làm việc)**
+- Chạy `python _tools/videokit.py setup` và chờ chạy xong. Lệnh tự cài thư viện Python, Chromium, model Whisper còn thiếu và chạy thử từng thứ.
+- Chỉ làm tiếp khi lệnh in "Máy đã sẵn sàng làm video." (mã thoát 0). Dòng nào `[THIẾU]` thì xử lý theo ghi chú trên dòng đó; việc cần quyền người dùng (ví dụ cài ffmpeg) thì báo người dùng ngay từ đầu, không để đến lúc dựng mới phát hiện.
+- Script riêng của video (ví dụ sinh giọng) cần thư viện nào ngoài danh sách của setup thì cài và chạy thử trước khi dùng.
+
 **Giai đoạn 1 — Phân tích yêu cầu**
 - Xác định chủ đề, mục tiêu, đối tượng xem và thông điệp chính.
 - Xác định kiến thức nền của người xem.
@@ -122,6 +127,7 @@ Thực hiện theo thứ tự sau:
 
 **Giai đoạn 7 — Dựng bản demo rồi DỪNG**
 - Chỉ dựng các cảnh trong `demo_scenes` (mục 10.1). Không sinh giọng, không render các cảnh ngoài demo.
+- Trước khi dựng, mọi tài nguyên trong danh sách mục 7 phải đã nằm trong `assets/` (giọng, nhạc, hiệu ứng, font, ảnh). `videokit.py` dừng với mã 1 và liệt kê file nào còn thiếu.
 - Báo người dùng theo mẫu ở mục 10.1 rồi kết thúc lượt làm việc, chờ người dùng trả lời.
 
 **Giai đoạn 8 — Dựng bản đầy đủ (chỉ khi người dùng đã duyệt demo)**
