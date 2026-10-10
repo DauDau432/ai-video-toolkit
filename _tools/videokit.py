@@ -71,6 +71,10 @@ def whisper():
         except ImportError:
             pass
         from faster_whisper import WhisperModel
+        if not os.path.exists(os.path.join(MODEL, "model.bin")):
+            from huggingface_hub import snapshot_download
+            print(f"Chưa có model Whisper, đang tải về {os.path.normpath(MODEL)} (2,9 GB, chỉ tải một lần)...")
+            snapshot_download("Systran/faster-whisper-large-v3", local_dir=MODEL)
         try:
             _whisper = WhisperModel(MODEL, device="cuda", compute_type="float16")
         except Exception:

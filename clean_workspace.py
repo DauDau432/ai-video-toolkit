@@ -15,7 +15,7 @@ from datetime import datetime
 SELF = os.path.abspath(sys.executable if getattr(sys, "frozen", False) else __file__)
 ROOT = os.path.dirname(SELF)
 ARCHIVE_DIR = "_archive"
-KEEP = {"Template.md", "clean_workspace.py", "clean_workspace.exe", ARCHIVE_DIR, "_models", "_tools", ".git", ".gitignore"}
+KEEP = {"Template.md", "clean_workspace.py", "clean_workspace.exe", ARCHIVE_DIR, "_models", "_tools", ".git", ".gitignore", "README.md"}
 
 NEW_DIRS = [
     "scripts",

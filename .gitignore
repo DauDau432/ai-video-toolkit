@@ -3,6 +3,10 @@
 !/.gitignore
 !/Template.md
 !/clean_workspace.py
+!/README.md
+!/_models/
+/_models/*
+!/_models/README.md
 !/_tools/
 
 __pycache__/
