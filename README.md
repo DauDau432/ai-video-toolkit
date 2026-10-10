@@ -19,11 +19,12 @@ Không dùng được với AI chat trên web (ChatGPT, Gemini, Claude.ai…): c
 | `_tools/vk.js` | Thư viện nhỏ cho trang HTML (chuột, gõ phím, hiệu ứng theo thời gian). |
 | `_tools/example/` | Dự án mẫu chạy được ngay. |
 | `clean_workspace.py` | Cất dự án video cũ vào `_archive/` (không xóa gì) và tạo thư mục trống cho video mới. |
-| `_models/README.md` | Ghi chú về model Whisper (model tải riêng, không nằm trong repo). |
+| `_tools/music_gen.py` | Phần sinh nhạc chạy trong môi trường riêng của ACE-Step, do `videokit.py music` gọi. |
+| `_models/README.md` | Ghi chú về model Whisper và ACE-Step (model tải riêng, không nằm trong repo). |
 
 ## Cài đặt (một lần)
 
-Cần Windows 10/11, Python 3.11 trở lên, khoảng 5 GB trống. Card NVIDIA giúp chạy nhanh hơn nhưng không bắt buộc.
+Cần Windows 10/11, Python 3.11 trở lên, git, khoảng 25 GB trống (phần lớn là model sinh nhạc). Card NVIDIA giúp chạy nhanh hơn nhưng không bắt buộc.
 
 1. Tải repo:
 
@@ -31,10 +32,10 @@ Cần Windows 10/11, Python 3.11 trở lên, khoảng 5 GB trống. Card NVIDIA 
    git clone https://github.com/DauDau432/ai-video-toolkit.git
    ```
 
-2. Cài ffmpeg (bản full) và thêm vào PATH, rồi mở lại IDE:
+2. Cài ffmpeg (bản full) và git nếu máy chưa có, rồi mở lại IDE:
 
    ```bash
-   winget install Gyan.FFmpeg
+   winget install Gyan.FFmpeg Git.Git
    ```
 
 3. Mở thư mục repo trong IDE và nhắn agent:
@@ -43,11 +44,11 @@ Cần Windows 10/11, Python 3.11 trở lên, khoảng 5 GB trống. Card NVIDIA 
    Chạy python _tools/videokit.py setup và xử lý đến khi máy sẵn sàng.
    ```
 
-   Lệnh `setup` tự cài các thư viện Python (thêm thư viện CUDA nếu có card NVIDIA), Chromium để render, tải model Whisper large-v3 (2,9 GB, một lần) vào `_models/`, rồi chạy thử từng thứ. Thấy dòng "Máy đã sẵn sàng làm video." là xong. Tự chạy cũng được, kết quả như nhau.
+   Lệnh `setup` tự cài các thư viện Python (thêm thư viện CUDA nếu có card NVIDIA), Chromium để render, tải model Whisper large-v3 (2,9 GB) và cài ACE-Step 1.5 để sinh nhạc nền (khoảng 17 GB gồm môi trường và model) vào `_models/`, rồi chạy thử từng thứ. Lần đầu mất khá lâu vì tải nhiều, các lần sau chỉ vài giây. Thấy dòng "Máy đã sẵn sàng làm video." là xong. Tự chạy cũng được, kết quả như nhau.
 
    Agent cũng phải chạy lại lệnh này đầu mỗi phiên làm video (Template Giai đoạn 0), nên thiếu gì sẽ lộ ra từ đầu chứ không phải giữa lúc dựng.
 
-Font chữ, nhạc nền, hiệu ứng âm thanh của từng video do agent tải hoặc tạo vào `assets/` của video đó (Template mục 7). Trước khi dựng, `videokit.py` dừng nếu thiếu file nào và chặn mọi thứ tải từ mạng, nên agent buộc phải chuẩn bị đủ trên máy trước.
+Font chữ, nhạc nền, hiệu ứng âm thanh của từng video do agent tải hoặc tạo vào `assets/` của video đó (Template mục 7). Nhạc nền được AI sinh trên máy theo mô tả hợp chủ đề từng video (`videokit.py music`), không phải một bản nhạc dùng chung. Trước khi dựng, `videokit.py` dừng nếu thiếu file nào và chặn mọi thứ tải từ mạng, nên agent buộc phải chuẩn bị đủ trên máy trước.
 
 ## Làm một video
 
