@@ -737,7 +737,7 @@ def music_get(tid, seconds, out):
     if end - start < 4 * xf:
         fail(f"Bài {tid} quá ngắn để làm nhạc nền, chọn bài khác.")
     # Lần đầu phát từ đầu bài (giữ đoạn vào bài); các lần lặp sau bắt đầu từ phần chính, chồng mờ 3 giây
-    track, loops = a[:end], 0
+    track, loops = a[:end].copy(), 0
     up = np.sqrt(np.linspace(0, 1, xf, dtype=np.float32))[:, None]
     down = np.sqrt(np.linspace(1, 0, xf, dtype=np.float32))[:, None]
     body = a[start:end]
