@@ -120,13 +120,14 @@
           width: 2 * r + "px", height: 2 * r + "px", opacity: String(1 - st.click.k) });
       }
     }
-    // Phím tắt / phím bấm hiện dạng keycap 0,9 giây
+    // Phím tắt / phím bấm hiện dạng keycap 1,5 giây
     const keys = layer.querySelector("#vk-keys");
-    const k = Object.values(window.TIMELINE.actions).find((x) => KEYS.includes(x.type) && t >= x.start && t < x.start + 0.9);
+    const k = Object.values(window.TIMELINE.actions).filter((x) => KEYS.includes(x.type) && t >= x.start && t < x.start + 1.5)
+      .sort((a, b) => b.start - a.start)[0];
     keys.style.display = k ? "flex" : "none";
     if (k) {
       const kp = clamp((t - k.start) / 0.12);
-      keys.style.opacity = String(Math.min(kp, clamp((k.start + 0.9 - t) / 0.2)));
+      keys.style.opacity = String(Math.min(kp, clamp((k.start + 1.5 - t) / 0.2)));
       keys.innerHTML = String(k.keys || k.key || "Enter").split("+").map((s) =>
         '<span style="font:600 34px/1 Segoe UI,Arial,sans-serif;color:#fff;background:#2b2f3a;border:2px solid #6b7280;' +
         "border-bottom-width:6px;border-radius:12px;padding:14px 22px;transform:translateY(" + (t - k.start < 0.1 ? 4 : 0) + 'px)">' +
