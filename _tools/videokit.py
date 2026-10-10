@@ -344,7 +344,7 @@ def mix(src, tl, out_path):
         level = np.convolve(level, np.ones(30) / 30, "same")
         env = np.repeat(level, block)
         env = np.pad(env, (0, n - len(env)), mode="edge")[:n]
-        total += music * (env[:, None] * bgm.get("volume", 0.3))
+        total += music * (env[:, None] * bgm.get("volume", 0.25))
 
     raw = os.path.join(WORK, f"mix_raw.{tl['mode']}.wav")
     run(["ffmpeg", "-v", "error", "-y", "-f", "f32le", "-ac", "2", "-ar", str(SR), "-i", "-", raw],
