@@ -55,6 +55,8 @@ Không mô tả chung chung như “hiệu ứng đẹp”, “zoom mượt” h
 Đọc rõ trên điện thoại (bắt buộc):
 - Ở khung 1920×1080: chữ thường ít nhất 32 px, chữ trong terminal/code ít nhất 34 px, tiêu đề từ 64 px. Video dọc 1080×1920 dùng cùng cỡ chữ.
 - Mỗi màn hình một ý chính, nội dung chính chiếm phần lớn khung hình. Không bày dashboard nhiều ô nhỏ hay để khoảng tối trống lớn.
+- Hình không được sơ sài, thô: mỗi khung có nền có chiều sâu (gradient, vệt sáng, lưới mờ), khối chính có viền, bóng, icon và chi tiết phụ minh họa cho ý đang nói (nhãn, số liệu thật, dòng log, thanh tiến trình). Bố cục lấp đầy vùng an toàn, cân đối trên dưới, không để một mảng trống lớn nào.
+- Cỡ chữ vừa phải và có thứ bậc (tiêu đề > chữ chính > chú thích): đủ lớn để đọc trên điện thoại nhưng không to tới mức chữ bị cắt, tràn khung hay xuống dòng lộn xộn. Mọi chữ phải hiện đầy đủ trong khung chứa nó.
 - Cần chi tiết nhỏ (một dòng log, một ô cài đặt) thì phóng to vào vùng đang thao tác.
 - Kiểm tra bằng ảnh chụp khung hình (`python _tools/videokit.py still <giây>`) trước khi dựng.
 
@@ -318,6 +320,8 @@ Tạo danh sách tài nguyên theo từng cảnh:
 - Phương án thay thế nếu không có tài nguyên.
 
 Không giả định file đã tồn tại chỉ vì đã ghi tên file trong kịch bản.
+
+Font dùng chung cho mọi video nằm ở `assets/fonts/` (`clean_workspace.py` giữ lại khi dọn). Xem font nào đã có trước khi tải thêm, chỉ tải font còn thiếu.
 
 Nếu yêu cầu hình ảnh cần AI tạo ảnh, phải cung cấp prompt riêng cho từng tài nguyên, mô tả chủ thể, bố cục, phong cách, ánh sáng, tỷ lệ khung hình và các yếu tố cần tránh.
 

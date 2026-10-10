@@ -3,6 +3,7 @@
 Không xóa gì cả: mọi file/thư mục của video cũ được CHUYỂN vào
 _archive/<thời gian>[_<tên video cũ>]/ để có thể lấy lại khi cần.
 Sau đó tạo lại cấu trúc thư mục trống theo mục 9 của Template.md.
+Font trong assets/fonts/ dùng chung cho mọi video: được chép vào bản lưu trữ và giữ lại cho video mới.
 
 Cách dùng: double-click file này, hoặc chạy `python clean_workspace.py`, rồi chọn trong menu.
 """
@@ -15,6 +16,7 @@ from datetime import datetime
 SELF = os.path.abspath(sys.executable if getattr(sys, "frozen", False) else __file__)
 ROOT = os.path.dirname(SELF)
 ARCHIVE_DIR = "_archive"
+KEEP_COPY = ["assets/fonts"]  # lưu trữ một bản nhưng vẫn giữ lại, khỏi tải lại mỗi video
 KEEP = {"Template.md", "clean_workspace.py", "clean_workspace.exe", ARCHIVE_DIR, "_models", "_tools", ".git", ".gitignore", "README.md"}
 
 NEW_DIRS = [
@@ -49,12 +51,15 @@ def clean():
         os.makedirs(dest)
         for item in items:
             shutil.move(os.path.join(ROOT, item), os.path.join(dest, item))
+        for d in KEEP_COPY:
+            if os.path.isdir(os.path.join(dest, d)):
+                shutil.copytree(os.path.join(dest, d), os.path.join(ROOT, d))
         print(f"\nĐã chuyển {len(items)} mục vào {os.path.relpath(dest, ROOT)}")
 
     for d in NEW_DIRS:
         os.makedirs(os.path.join(ROOT, d), exist_ok=True)
     print("Đã tạo cấu trúc thư mục mới cho video tiếp theo.")
-    print("Giữ lại:", ", ".join(sorted(KEEP - {ARCHIVE_DIR})))
+    print("Giữ lại:", ", ".join(sorted(KEEP - {ARCHIVE_DIR}) + KEEP_COPY))
 
 
 while True:

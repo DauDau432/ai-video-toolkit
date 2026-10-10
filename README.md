@@ -47,7 +47,7 @@ Cần Windows 10/11, Python 3.11 trở lên, khoảng 5 GB trống. Card NVIDIA 
 
    Agent cũng phải chạy lại lệnh này đầu mỗi phiên làm video (Template Giai đoạn 0), nên thiếu gì sẽ lộ ra từ đầu chứ không phải giữa lúc dựng.
 
-Font chữ, nhạc nền, hiệu ứng âm thanh của từng video do agent tải hoặc tạo vào `assets/` của video đó (Template mục 7). Nhạc nền được agent chọn theo chủ đề từng video từ thư viện miễn phí Mixkit (`videokit.py music`), không phải một bản nhạc dùng chung. Trước khi dựng, `videokit.py` dừng nếu thiếu file nào và chặn mọi thứ tải từ mạng, nên agent buộc phải chuẩn bị đủ trên máy trước.
+Nhạc nền, hiệu ứng âm thanh của từng video do agent tải hoặc tạo vào `assets/` của video đó (Template mục 7). Font trong `assets/fonts/` thì dùng chung: tải một lần, `clean_workspace.py` giữ lại cho video sau. Nhạc nền được agent chọn theo chủ đề từng video từ thư viện miễn phí Mixkit (`videokit.py music`), không phải một bản nhạc dùng chung. Trước khi dựng, `videokit.py` dừng nếu thiếu file nào và chặn mọi thứ tải từ mạng, nên agent buộc phải chuẩn bị đủ trên máy trước.
 
 ## Làm một video
 
@@ -80,7 +80,7 @@ Bản cuối nằm ở `output/final/<tên-video>-16x9.mp4` (hoặc `9x16`), kè
 
 **4. Sang video mới**
 
-Chạy `python clean_workspace.py` (hoặc file `clean_workspace.exe` nếu bạn tự đóng gói), chọn mục 2. Video cũ được cất vào `_archive/<thời gian>_<tên>/`; `Template.md`, `_tools/`, `_models/` giữ nguyên.
+Chạy `python clean_workspace.py` (hoặc file `clean_workspace.exe` nếu bạn tự đóng gói), chọn mục 2. Video cũ được cất vào `_archive/<thời gian>_<tên>/`; `Template.md`, `_tools/`, `_models/` và font trong `assets/fonts/` giữ nguyên.
 
 ## Khi agent làm sai
 

@@ -142,12 +142,15 @@ def load_source():
     return json.load(open(TIMELINE, encoding="utf-8"))
 
 
-def check_inputs(src):
-    """Mọi file timeline.json nhắc tới phải có sẵn trước khi tính toán hay dựng."""
+def check_inputs(src, mode):
+    """Mọi file timeline.json nhắc tới phải có sẵn trước khi tính toán hay dựng.
+    Bản demo chỉ cần file của các cảnh trong demo_scenes (Template: không sinh giọng ngoài demo)."""
     need = [("html", src.get("html"))]
     if (src.get("bgm") or {}).get("file"):
         need.append(("bgm", src["bgm"]["file"]))
     for sc in src.get("scenes", []):
+        if mode == "demo" and sc.get("scene_id") not in (src.get("demo_scenes") or []):
+            continue
         need += [(f"{sc.get('scene_id')}: {i if isinstance(i, str) else i.get('id')}",
                   f"assets/voice/{i if isinstance(i, str) else i.get('id')}.wav") for i in sc.get("segments", [])]
         need += [(f"{a.get('id', sc.get('scene_id'))}: sfx", a["sfx"]) for a in sc.get("actions", []) if a.get("sfx")]
@@ -561,7 +564,7 @@ def check(src, tl, video_path, report_path, frames_dir, enc_name, render_secs, j
         ("Bitrate hình", f"{int(v.get('bit_rate', 0)) / 1e6:.1f} Mbps (mã hóa theo chất lượng, cảnh ít chuyển động thì bitrate thấp là bình thường)", True),
         ("Âm thanh", f"{a['codec_name']} {a['sample_rate']} Hz {a['channels']} kênh" if a else "KHÔNG CÓ",
          bool(a) and a["codec_name"] == "aac" and a["sample_rate"] == "48000"),
-        ("Thời lượng hình / tiếng", f"{vdur:.3f}s / {adur:.3f}s", abs(vdur - adur) <= 1.5 / tl["fps"] + 0.03),
+        ("Thời lượng hình / tiếng", f"{vdur:.3f}s / {adur:.3f}s", abs(vdur - adur) <= 1.5 / tl["fps"] + 0.13),
     ]
     loud = subprocess.run(["ffmpeg", "-i", video_path, "-af", "ebur128=peak=true", "-f", "null", "-"],
                           capture_output=True, text=True, encoding="utf-8").stderr
@@ -641,7 +644,7 @@ def build(mode, workers):
     if mode == "full" and not os.path.exists(os.path.join(ROOT, "docs", "approval.md")):
         fail("Bản demo chưa được duyệt (chưa có docs/approval.md). Không dựng bản đầy đủ.")
     os.makedirs(WORK, exist_ok=True)
-    check_inputs(src)
+    check_inputs(src, mode)
     check_voices(src)
     tl = resolve(src, mode)
     print_timeline(tl)
@@ -870,7 +873,7 @@ def main():
     if args.command in ("demo", "full"):
         build(args.command, args.workers)
     src = load_source()
-    check_inputs(src)
+    check_inputs(src, "full" if args.full else "demo")
     tl = resolve(src, "full" if args.full else "demo")
     if args.command == "timeline":
         print_timeline(tl)

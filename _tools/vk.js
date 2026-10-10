@@ -104,6 +104,8 @@
 
   function drawPointer(t) {
     ensureLayer();
+    // Video dọc: đặt phím trên 1/5 dưới khung (vùng caption, nút của TikTok/Reels/Shorts che mất)
+    layer.querySelector("#vk-keys").style.bottom = (window.innerHeight > window.innerWidth ? Math.round(window.innerHeight * 0.21) : 70) + "px";
     const sc = scene(t);
     const st = pointerState(t, sc);
     const cur = layer.querySelector("#vk-cursor");
